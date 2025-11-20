@@ -48,23 +48,6 @@ public class AuthServiceImpl implements AuthService {
 
 	@Override
 	@Transactional
-	public AuthResponse register(RegisterRequest request, HttpServletRequest httpRequest) {
-		var targetRole = request.role() == null ? Role.DOCTOR : request.role();
-		if (targetRole != Role.DOCTOR) {
-			throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only doctors can self-register.");
-		}
-		var user = createUser(request, EnumSet.of(Role.DOCTOR));
-		var token = verificationService.createToken(user);
-		emailService.sendVerificationEmail(user.getEmail(), user.getFullName(), token.getToken());
-		return AuthResponse.builder()
-			.fullName(user.getFullName())
-			.email(user.getEmail())
-			.message("Inscription réussie. Veuillez vérifier votre email pour activer votre compte.")
-			.build();
-	}
-
-	@Override
-	@Transactional
 	public AuthResponse registerDoctor(RegisterDoctorRequest request, HttpServletRequest httpRequest) {
 		if (userRepository.existsByEmailIgnoreCase(request.email())) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Un compte existe déjà avec cet email.");
