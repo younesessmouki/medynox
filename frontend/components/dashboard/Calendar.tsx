@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface CalendarProps {
   onDateSelect?: (date: Date) => void;
@@ -10,8 +9,6 @@ interface CalendarProps {
 }
 
 export function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
   const [currentDate, setCurrentDate] = useState(selectedDate || new Date());
 
   const year = currentDate.getFullYear();
@@ -73,39 +70,21 @@ export function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
   };
 
   return (
-    <div
-      className={`rounded-xl border p-4 ${
-        isDark
-          ? 'bg-white/5 border-white/10'
-          : 'bg-white border-gray-200'
-      }`}
-    >
+    <div className="rounded-xl border p-4 bg-white border-gray-200">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <button
           onClick={goToPreviousMonth}
-          className={`p-1 rounded-lg transition-colors ${
-            isDark
-              ? 'hover:bg-white/5 text-white/60 hover:text-white'
-              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-          }`}
+          className="p-1 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 hover:text-gray-900"
         >
           <ChevronLeft size={20} />
         </button>
-        <h3
-          className={`font-semibold ${
-            isDark ? 'text-white' : 'text-gray-900'
-          }`}
-        >
+        <h3 className="font-semibold text-gray-900">
           {monthNames[month]} {year}
         </h3>
         <button
           onClick={goToNextMonth}
-          className={`p-1 rounded-lg transition-colors ${
-            isDark
-              ? 'hover:bg-white/5 text-white/60 hover:text-white'
-              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-          }`}
+          className="p-1 rounded-lg transition-colors hover:bg-gray-100 text-gray-600 hover:text-gray-900"
         >
           <ChevronRight size={20} />
         </button>
@@ -116,9 +95,7 @@ export function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
         {weekDays.map((day) => (
           <div
             key={day}
-            className={`text-center text-xs font-medium py-2 ${
-              isDark ? 'text-white/60' : 'text-gray-600'
-            }`}
+            className="text-center text-xs font-medium py-2 text-gray-600"
           >
             {day}
           </div>
@@ -146,12 +123,8 @@ export function Calendar({ onDateSelect, selectedDate }: CalendarProps) {
                   selected
                     ? 'bg-[#24abe0] text-white'
                     : today
-                      ? isDark
-                        ? 'bg-white/10 text-white border border-white/20'
-                        : 'bg-gray-100 text-gray-900 border border-gray-300'
-                      : isDark
-                        ? 'text-white/80 hover:bg-white/5 hover:text-white'
-                        : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+                      ? 'bg-gray-100 text-gray-900 border border-gray-300'
+                      : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
                 }
               `}
             >

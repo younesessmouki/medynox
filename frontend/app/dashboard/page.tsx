@@ -125,7 +125,7 @@ export default function DashboardPage() {
         <div
           className={`rounded-xl bg-gradient-to-r from-[#24abe0]/10 to-[#D32C2C]/10 border ${
             isDark ? 'border-[#24abe0]/20' : 'border-[#24abe0]/30'
-          } p-6`}
+          } p-6 text-center`}
         >
           <h1 className="text-3xl font-bold mb-2">
             Bonjour Dr. Younes — Bienvenue sur Medynox

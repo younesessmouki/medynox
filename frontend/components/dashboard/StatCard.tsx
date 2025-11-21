@@ -1,7 +1,6 @@
 'use client';
 
 import { LucideIcon } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 interface StatCardProps {
   title: string;
@@ -21,37 +20,20 @@ export function StatCard({
   trend,
   color = '#24abe0',
 }: StatCardProps) {
-  const { theme } = useTheme();
-  const isDark = theme === 'dark';
-
   return (
-    <div
-      className={`rounded-xl backdrop-blur-xl border p-6 shadow-md transition-all duration-300 ${
-        isDark
-          ? 'bg-white/5 border-white/10 shadow-black/30 hover:bg-white/10 hover:border-white/20'
-          : 'bg-white border-gray-200 shadow-gray-200/50 hover:bg-gray-50 hover:border-gray-300'
-      }`}
-    >
+    <div className="rounded-xl border p-6 shadow-lg transition-all duration-300 bg-gradient-to-br from-gray-700 via-gray-600 to-gray-700 border-gray-500/40 hover:shadow-xl hover:scale-[1.02] hover:border-gray-400/60">
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <p
-            className={`text-sm font-medium mb-1 ${
-              isDark ? 'text-white/60' : 'text-gray-600'
-            }`}
-          >
+          <p className="text-sm font-medium mb-1 text-gray-300">
             {title}
           </p>
-          <p
-            className={`text-2xl font-bold ${
-              isDark ? 'text-white' : 'text-gray-900'
-            }`}
-          >
+          <p className="text-2xl font-bold text-white">
             {value}
           </p>
           {trend && (
             <div
               className={`mt-2 flex items-center gap-1 text-xs font-medium ${
-                trend.isPositive ? 'text-green-400' : 'text-[#D32C2C]'
+                trend.isPositive ? 'text-green-400' : 'text-red-400'
               }`}
             >
               <span>{trend.isPositive ? '↑' : '↓'}</span>
@@ -60,8 +42,11 @@ export function StatCard({
           )}
         </div>
         <div
-          className="p-3 rounded-xl"
-          style={{ backgroundColor: `${color}20` }}
+          className="p-3 rounded-xl shadow-sm"
+          style={{ 
+            backgroundColor: `${color}20`,
+            border: `1px solid ${color}40`
+          }}
         >
           <Icon size={24} style={{ color }} />
         </div>

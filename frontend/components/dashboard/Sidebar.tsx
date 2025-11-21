@@ -42,7 +42,6 @@ import {
   Video,
 } from 'lucide-react';
 import { MedynoxLogo } from './MedynoxLogo';
-import { useTheme } from '@/contexts/ThemeContext';
 import { useSidebar } from '@/contexts/SidebarContext';
 
 interface MenuItem {
@@ -138,15 +137,15 @@ const menuItems: MenuItem[] = [
       { label: 'Nouveau RDV', href: '/dashboard/agenda/new' },
     ],
   },
-  {
-    icon: Pill,
-    label: 'Ordonnances AI',
-    href: '/dashboard/ordonnances',
-    submenu: [
-      { label: 'Nouvelle ordonnance', href: '/dashboard/ordonnances/new' },
-      { label: 'Historique', href: '/dashboard/ordonnances/history' },
-    ],
-  },
+  // {
+  //   icon: Pill,
+  //   label: 'Ordonnances AI',
+  //   href: '/dashboard/ordonnances',
+  //   submenu: [
+  //     { label: 'Nouvelle ordonnance', href: '/dashboard/ordonnances/new' },
+  //     { label: 'Historique', href: '/dashboard/ordonnances/history' },
+  //   ],
+  // },
   {
     icon: FileText,
     label: 'OCR Extraction',
@@ -164,14 +163,14 @@ const menuItems: MenuItem[] = [
       { label: 'Liste des dossiers', href: '/dashboard/dme' },
     ],
   },
-  {
-    icon: Activity,
-    label: 'Analyses IA',
-    href: '/dashboard/analyses',
-    submenu: [
-      { label: 'Upload analyse', href: '/dashboard/analyses/upload' },
-    ],
-  },
+  // {
+  //   icon: Activity,
+  //   label: 'Analyses IA',
+  //   href: '/dashboard/analyses',
+  //   submenu: [
+  //     { label: 'Upload analyse', href: '/dashboard/analyses/upload' },
+  //   ],
+  // },
   {
     icon: Building2,
     label: 'Multi-Cabinets',
@@ -191,16 +190,16 @@ const menuItems: MenuItem[] = [
     label: 'Chat Interne',
     href: '/dashboard/chat',
   },
-  {
-    icon: Activity,
-    label: 'Supervision',
-    href: '/dashboard/supervision',
-    submenu: [
-      { label: 'Vue d\'ensemble', href: '/dashboard/supervision' },
-      { label: 'Salles', href: '/dashboard/supervision/rooms' },
-      { label: 'Vue Live', href: '/dashboard/supervision/live' },
-    ],
-  },
+  // {
+  //   icon: Activity,
+  //   label: 'Supervision',
+  //   href: '/dashboard/supervision',
+  //   submenu: [
+  //     { label: 'Vue d\'ensemble', href: '/dashboard/supervision' },
+  //     { label: 'Salles', href: '/dashboard/supervision/rooms' },
+  //     { label: 'Vue Live', href: '/dashboard/supervision/live' },
+  //   ],
+  // },
   {
     icon: Shield,
     label: 'Assurances',
@@ -243,16 +242,16 @@ const menuItems: MenuItem[] = [
       { label: 'Upload', href: '/dashboard/documents/upload' },
     ],
   },
-  {
-    icon: Activity,
-    label: 'Notes vocales',
-    href: '/dashboard/voice-notes',
-  },
-  {
-    icon: Video,
-    label: 'Téléconsultation',
-    href: '/dashboard/teleconsultation',
-  },
+  // {
+  //   icon: Activity,
+  //   label: 'Notes vocales',
+  //   href: '/dashboard/voice-notes',
+  // },
+  // {
+  //   icon: Video,
+  //   label: 'Téléconsultation',
+  //   href: '/dashboard/teleconsultation',
+  // },
   {
     icon: CreditCard,
     label: 'Paiements',
@@ -281,59 +280,160 @@ export function Sidebar() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [openSubmenus, setOpenSubmenus] = useState<Set<string>>(new Set());
   const pathname = usePathname();
-  const { theme } = useTheme();
+  const navRef = React.useRef<HTMLElement>(null);
+  const scrollPositionRef = React.useRef<number>(0);
+  const isRestoringScrollRef = React.useRef<boolean>(false);
 
-  const isDark = theme === 'dark';
-
-  // Auto-open parent section if current route is in a submenu
-  // This runs once on mount and when pathname changes
+  // Restore open submenus from sessionStorage on mount
   React.useEffect(() => {
-    menuItems.forEach((item) => {
-      if (item.submenu) {
-        const isInSubmenu = item.submenu.some(
-          (subItem) => pathname === subItem.href || pathname.startsWith(subItem.href + '/')
-        );
-        if (isInSubmenu) {
-          setOpenSubmenus((prev) => {
-            const newSet = new Set(prev);
-            newSet.add(item.label);
-            return newSet;
-          });
-        }
+    try {
+      const saved = sessionStorage.getItem('sidebar-open-submenus');
+      if (saved) {
+        const savedSet = new Set<string>(JSON.parse(saved));
+        setOpenSubmenus(savedSet);
       }
-    });
+    } catch (error) {
+      // Ignore storage errors
+    }
+  }, []);
+
+  // Save open submenus to sessionStorage whenever they change
+  React.useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        'sidebar-open-submenus',
+        JSON.stringify(Array.from(openSubmenus))
+      );
+    } catch (error) {
+      // Ignore storage errors
+    }
+  }, [openSubmenus]);
+
+  // Save scroll position to sessionStorage
+  const handleScroll = React.useCallback(() => {
+    if (navRef.current && !isRestoringScrollRef.current) {
+      const scrollTop = navRef.current.scrollTop;
+      scrollPositionRef.current = scrollTop;
+      try {
+        sessionStorage.setItem('sidebar-scroll', scrollTop.toString());
+      } catch (error) {
+        // Handle storage errors (e.g., private mode)
+        console.warn('Failed to save sidebar scroll position:', error);
+      }
+    }
+  }, []);
+
+  // Restore scroll position from sessionStorage on mount
+  React.useEffect(() => {
+    if (navRef.current) {
+      isRestoringScrollRef.current = true;
+      try {
+        const saved = sessionStorage.getItem('sidebar-scroll');
+        if (saved) {
+          const scrollTop = Number(saved);
+          scrollPositionRef.current = scrollTop;
+          // Use requestAnimationFrame to ensure DOM is ready
+          requestAnimationFrame(() => {
+            if (navRef.current) {
+              navRef.current.scrollTop = scrollTop;
+            }
+            isRestoringScrollRef.current = false;
+          });
+        } else {
+          isRestoringScrollRef.current = false;
+        }
+      } catch (error) {
+        isRestoringScrollRef.current = false;
+      }
+    }
+  }, []);
+
+  // Preserve scroll position on pathname change
+  React.useEffect(() => {
+    if (navRef.current && !isRestoringScrollRef.current) {
+      const savedPosition = scrollPositionRef.current;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (navRef.current && savedPosition > 0) {
+            navRef.current.scrollTop = savedPosition;
+          }
+        });
+      });
+    }
   }, [pathname]);
 
-  const toggleSubmenu = (label: string) => {
-    setOpenSubmenus((prev) => {
-      const newOpen = new Set(prev);
-      if (newOpen.has(label)) {
-        newOpen.delete(label);
-      } else {
-        newOpen.add(label);
+  const toggleSubmenu = React.useCallback(
+    (label: string, event?: React.MouseEvent<HTMLButtonElement>) => {
+      // Prevent default behavior that might cause scroll
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
       }
-      return newOpen;
-    });
-  };
 
-  const isActiveRoute = (href?: string) => {
-    if (!href) return false;
-    if (href === '/dashboard') {
-      return pathname === '/dashboard';
+      // Preserve scroll position before state change
+      const navElement = navRef.current;
+      const scrollPosition = navElement?.scrollTop || scrollPositionRef.current;
+
+      setOpenSubmenus((prev) => {
+        const newOpen = new Set(prev);
+        if (newOpen.has(label)) {
+          newOpen.delete(label);
+        } else {
+          newOpen.add(label);
+        }
+        return newOpen;
+      });
+
+      // Restore scroll position after DOM update
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (navElement) {
+            isRestoringScrollRef.current = true;
+            navElement.scrollTop = scrollPosition;
+            scrollPositionRef.current = scrollPosition;
+            requestAnimationFrame(() => {
+              isRestoringScrollRef.current = false;
+            });
+          }
+        });
+      });
+    },
+    []
+  );
+
+  // Memoize isActiveRoute to prevent unnecessary re-renders
+  const isActiveRoute = React.useCallback(
+    (href?: string) => {
+      if (!href) return false;
+      if (href === '/dashboard') {
+        return pathname === '/dashboard';
+      }
+      return pathname.startsWith(href);
+    },
+    [pathname]
+  );
+
+  // Handle link clicks - preserve scroll
+  const handleLinkClick = React.useCallback((e: React.MouseEvent<HTMLAnchorElement>) => {
+    // Save current scroll position before navigation
+    if (navRef.current) {
+      scrollPositionRef.current = navRef.current.scrollTop;
+      try {
+        sessionStorage.setItem('sidebar-scroll', scrollPositionRef.current.toString());
+      } catch (error) {
+        // Ignore storage errors
+      }
     }
-    return pathname.startsWith(href);
-  };
+    setIsMobileOpen(false);
+    // Don't prevent default - allow navigation
+  }, []);
 
   return (
     <>
       {/* Mobile menu button */}
       <button
         onClick={() => setIsMobileOpen(!isMobileOpen)}
-        className={`lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg backdrop-blur-xl border transition-colors ${
-          isDark
-            ? 'bg-white/5 border-white/10 text-white'
-            : 'bg-gray-100 border-gray-200 text-gray-900'
-        }`}
+        className="lg:hidden fixed top-4 left-4 z-50 p-2.5 rounded-lg backdrop-blur-xl border transition-all duration-200 bg-black/90 border-white/10 text-white hover:bg-black hover:border-white/20 hover:scale-105 active:scale-95 shadow-lg"
       >
         {isMobileOpen ? <X size={20} /> : <Menu size={20} />}
       </button>
@@ -345,23 +445,24 @@ export function Sidebar() {
           top-0 left-0
           h-screen
           border-r
-          transition-all duration-300
+          transition-all duration-300 ease-in-out
           z-40
-          ${isCollapsed ? 'w-20' : 'w-64'}
+          ${isCollapsed ? 'w-28' : 'w-64'}
           ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          ${
-            isDark
-              ? 'bg-[#0A0A0A] border-white/10'
-              : 'bg-white border-gray-200 shadow-lg'
-          }
+          bg-gradient-to-b from-[#0a0a0a] to-[#050505] border-white/10 shadow-2xl
+          backdrop-blur-xl
         `}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
+          {/* Logo Header */}
           <div
-            className={`p-4 lg:p-6 border-b ${
-              isDark ? 'border-white/10' : 'border-gray-200'
-            } ${isCollapsed ? 'relative' : ''}`}
+            className={`
+              relative
+              p-5 lg:p-6 
+              border-b border-white/10 
+              bg-gradient-to-r from-white/5 to-transparent
+              ${isCollapsed ? 'px-3' : ''}
+            `}
           >
             <div
               className={`flex items-center ${
@@ -372,19 +473,19 @@ export function Sidebar() {
               <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
                 title={isCollapsed ? 'Développer le menu' : 'Réduire le menu'}
-                className={`hidden lg:block p-2 rounded-lg transition-colors ${
-                  isDark
-                    ? 'hover:bg-white/5 text-white/60 hover:text-white'
-                    : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'
-                }`}
+                className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-200 hover:bg-white/10 hover:scale-105 active:scale-95 text-white/70 hover:text-white border border-white/5 hover:border-white/10"
               >
-                <Menu size={20} />
+                <Menu size={18} />
               </button>
             </div>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          <nav
+            ref={navRef}
+            onScroll={handleScroll}
+            className="flex-1 p-3 lg:p-4 space-y-0.5 overflow-y-auto custom-scrollbar"
+          >
             {menuItems.map((item) => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.href);
@@ -396,63 +497,103 @@ export function Sidebar() {
                   {hasSubmenu && !isCollapsed ? (
                     <>
                       <button
-                        onClick={() => toggleSubmenu(item.label)}
+                        type="button"
+                        onClick={(e) => toggleSubmenu(item.label, e)}
                         className={`
-                          w-full flex items-center justify-between gap-3
-                          px-4 py-3 rounded-xl
-                          transition-all duration-300
+                          group w-full flex items-center justify-between gap-3
+                          px-4 py-2.5 rounded-lg
+                          transition-all duration-200 ease-out
+                          font-medium text-sm
                           ${
                             isActive
-                              ? isDark
-                                ? 'bg-[#24abe0]/20 text-[#24abe0] border border-[#24abe0]/30'
-                                : 'bg-[#24abe0]/10 text-[#24abe0] border border-[#24abe0]/20'
-                              : isDark
-                                ? 'text-white/60 hover:text-white hover:bg-white/5'
-                                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                              ? 'bg-[#24abe0]/15 text-[#24abe0] border border-[#24abe0]/20 shadow-sm shadow-[#24abe0]/10'
+                              : 'text-white/70 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5'
                           }
                         `}
                       >
                         <div className="flex items-center gap-3">
-                          <Icon size={20} />
-                          <span className="font-medium">{item.label}</span>
+                          <Icon
+                            size={18}
+                            className={
+                              isActive
+                                ? 'text-[#24abe0]'
+                                : isCollapsed
+                                ? 'text-white'
+                                : 'text-white/70 group-hover:text-white'
+                            }
+                            style={
+                              isCollapsed && !isActive
+                                ? { stroke: '#ffffff', color: '#ffffff', strokeWidth: 2 }
+                                : isActive
+                                ? { stroke: '#24abe0', color: '#24abe0', strokeWidth: 2.5 }
+                                : { strokeWidth: 2 }
+                            }
+                          />
+                          <span className="font-medium tracking-wide">{item.label}</span>
                         </div>
                         {isSubmenuOpen ? (
-                          <ChevronDown size={16} />
+                          <ChevronDown
+                            size={16}
+                            className={
+                              isActive
+                                ? 'text-[#24abe0]'
+                                : isCollapsed
+                                ? 'text-white'
+                                : 'text-white/60 group-hover:text-white'
+                            }
+                            style={
+                              isCollapsed && !isActive
+                                ? { stroke: '#ffffff', color: '#ffffff' }
+                                : isActive
+                                ? { stroke: '#24abe0', color: '#24abe0' }
+                                : undefined
+                            }
+                          />
                         ) : (
-                          <ChevronRight size={16} />
+                          <ChevronRight
+                            size={16}
+                            className={
+                              isActive
+                                ? 'text-[#24abe0]'
+                                : isCollapsed
+                                ? 'text-white'
+                                : 'text-white/60 group-hover:text-white'
+                            }
+                            style={
+                              isCollapsed && !isActive
+                                ? { stroke: '#ffffff', color: '#ffffff' }
+                                : isActive
+                                ? { stroke: '#24abe0', color: '#24abe0' }
+                                : undefined
+                            }
+                          />
                         )}
                       </button>
                       {isSubmenuOpen && (
-                        <div
-                          className={`ml-4 mt-1 space-y-1 border-l pl-4 ${
-                            isDark ? 'border-white/10' : 'border-gray-200'
-                          }`}
-                        >
+                        <div className="ml-6 mt-1.5 space-y-0.5 border-l-2 pl-4 border-white/10">
                           {item.submenu?.map((subItem) => {
                             const isSubActive = pathname === subItem.href;
                             return (
                               <Link
                                 key={subItem.href}
                                 href={subItem.href}
-                                onClick={() => setIsMobileOpen(false)}
-                                // Don't close submenu on navigation - keep it open
+                                onClick={(e) => {
+                                  handleLinkClick(e);
+                                  e.stopPropagation();
+                                }}
                                 className={`
                                   flex items-center gap-2
-                                  px-3 py-2 rounded-lg
-                                  text-sm
-                                  transition-all duration-300
+                                  px-3 py-1.5 rounded-md
+                                  text-xs font-medium
+                                  transition-all duration-200
                                   ${
                                     isSubActive
-                                      ? isDark
-                                        ? 'bg-[#24abe0]/20 text-[#24abe0]'
-                                        : 'bg-[#24abe0]/10 text-[#24abe0]'
-                                      : isDark
-                                        ? 'text-white/50 hover:text-white hover:bg-white/5'
-                                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'
+                                      ? 'bg-[#24abe0]/15 text-[#24abe0] border-l-2 border-[#24abe0] ml-[-2px] pl-[14px]'
+                                      : 'text-white/60 hover:text-white/90 hover:bg-white/5 hover:pl-3.5'
                                   }
                                 `}
                               >
-                                <span>{subItem.label}</span>
+                                <span className="tracking-wide">{subItem.label}</span>
                               </Link>
                             );
                           })}
@@ -462,26 +603,43 @@ export function Sidebar() {
                   ) : (
                     <Link
                       href={item.href || '#'}
-                      onClick={() => setIsMobileOpen(false)}
+                      onClick={(e) => {
+                        handleLinkClick(e);
+                        e.stopPropagation();
+                      }}
                       className={`
-                        flex items-center gap-3
-                        px-4 py-3 rounded-xl
-                        transition-all duration-300
+                        group flex items-center gap-3
+                        ${isCollapsed ? 'justify-center' : ''}
+                        px-4 py-2.5 rounded-lg
+                        transition-all duration-200 ease-out
+                        font-medium text-sm
                         ${
                           isActive
-                            ? isDark
-                              ? 'bg-[#24abe0]/20 text-[#24abe0] border border-[#24abe0]/30'
-                              : 'bg-[#24abe0]/10 text-[#24abe0] border border-[#24abe0]/20'
-                            : isDark
-                              ? 'text-white/60 hover:text-white hover:bg-white/5'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                            ? 'bg-[#24abe0]/15 text-[#24abe0] border border-[#24abe0]/20 shadow-sm shadow-[#24abe0]/10'
+                            : 'text-white/70 hover:text-white hover:bg-white/5 border border-transparent hover:border-white/5'
                         }
                       `}
                       title={isCollapsed ? item.label : undefined}
                     >
-                      <Icon size={20} />
+                      <Icon
+                        size={18}
+                        className={
+                          isActive
+                            ? 'text-[#24abe0]'
+                            : isCollapsed
+                            ? 'text-white'
+                            : 'text-white/70 group-hover:text-white'
+                        }
+                        style={
+                          isCollapsed && !isActive
+                            ? { stroke: '#ffffff', color: '#ffffff', strokeWidth: 2 }
+                            : isActive
+                            ? { stroke: '#24abe0', color: '#24abe0', strokeWidth: 2.5 }
+                            : { strokeWidth: 2 }
+                        }
+                      />
                       {!isCollapsed && (
-                        <span className="font-medium">{item.label}</span>
+                        <span className="font-medium tracking-wide">{item.label}</span>
                       )}
                     </Link>
                   )}
@@ -491,19 +649,20 @@ export function Sidebar() {
           </nav>
 
           {/* Footer */}
-          <div
-            className={`p-4 border-t ${
-              isDark ? 'border-white/10' : 'border-gray-200'
-            }`}
-          >
+          <div className="p-4 lg:p-5 border-t border-white/10 bg-gradient-to-t from-white/5 to-transparent">
             {!isCollapsed && (
-              <p
-                className={`text-xs text-center ${
-                  isDark ? 'text-white/40' : 'text-gray-400'
-                }`}
-              >
-                © 2025 Medynox
-              </p>
+              <div className="text-center">
+                <p className="text-xs font-medium text-white/50 tracking-wide">
+                  © Created by WiyzDev Team
+                </p>
+              </div>
+            )}
+            {isCollapsed && (
+              <div className="flex justify-center">
+                <div className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center">
+                  <span className="text-[10px] font-bold text-white/60">M</span>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -513,9 +672,7 @@ export function Sidebar() {
       {isMobileOpen && (
         <div
           onClick={() => setIsMobileOpen(false)}
-          className={`lg:hidden fixed inset-0 backdrop-blur-sm z-30 ${
-            isDark ? 'bg-black/50' : 'bg-black/20'
-          }`}
+          className="lg:hidden fixed inset-0 backdrop-blur-sm z-30 bg-black/20"
         />
       )}
     </>
